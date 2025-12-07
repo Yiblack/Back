@@ -1,0 +1,221 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+//---------------------------------------
+//MODELOS DE USUARIOS
+//---------------------------------------
+
+model User {
+  id              Int            @id @default(autoincrement())
+  nombre          String
+  apellidos       String
+  fechaNacimiento DateTime
+  edad            Int
+  ciudad          String
+  email           String         @unique
+  password        String
+  fotoPerfil      String?
+  productos       Product[]
+  refreshTokens   RefreshToken[]
+  createdAt       DateTime       @default(now())
+  chatsAsUser1    Chat[]         @relation("ChatUser1")
+  chatsAsUser2    Chat[]         @relation("ChatUser2")
+  messagesSent    Message[]      @relation("MessageSender")
+  wallet          Wallet?
+
+  operationsRequested Operation[] @relation("OperationsRequested")
+  operationsReceived  Operation[] @relation("OperationsReceived")
+}
+
+//---------------------------------------
+//MODELOS DE REFRESH TOKENS 
+//---------------------------------------
+
+model RefreshToken {
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  userId     Int
+  user       User     @relation(fields: [userId], references: [id])
+  deviceInfo String
+  createdAT  DateTime @default(now())
+  expiredAT  DateTime
+}
+
+//---------------------------------------
+//MODELOS DE PRODUCTOS
+//---------------------------------------
+
+model Product {
+  id                 Int         @id @default(autoincrement())
+  nombre             String
+  descripcion        String
+  precio             Float?
+  fotos              Foto[]
+  categoriaId        Int
+  categoria          Categoria   @relation(fields: [categoriaId], references: [id])
+  tipoId             Int
+  tipo               Tipo        @relation(fields: [tipoId], references: [id])
+  estadoId           Int
+  estado             Estado      @relation(fields: [estadoId], references: [id])
+  disponibilidad     Boolean     @default(true)
+  fechaCreacion      DateTime    @default(now())
+  fechaActualizacion DateTime    @updatedAt
+  userId             Int
+  usuario            User        @relation(fields: [userId], references: [id])
+  ubicacion          String?
+  visibilidad        Boolean     @default(true)
+  chats              Chat[]
+  operations         Operation[] @relation("ProductOperations")
+
+  operationProducts OperationProduct[]
+}
+
+model Categoria {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  productos Product[]
+}
+
+model Tipo {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  productos Product[]
+}
+
+model Estado {
+  id        Int       @id @default(autoincrement())
+  nombre    String    @unique
+  productos Product[]
+}
+
+model Foto {
+  id         Int     @id @default(autoincrement())
+  url        String
+  productoId Int
+  producto   Product @relation(fields: [productoId], references: [id], onDelete: Cascade)
+}
+
+//---------------------------------------
+//CHATS
+//---------------------------------------
+
+model Chat {
+  id        Int @id @default(autoincrement())
+  user1Id   Int
+  user2Id   Int
+  productId Int
+
+  lastMessageId Int?     @unique
+  lastMessage   Message? @relation("LastMessageRelation", fields: [lastMessageId], references: [id])
+
+  messages  Message[] @relation("ChatMessages")
+  createdAt DateTime  @default(now())
+
+  updatedAt DateTime @updatedAt
+
+  user1   User    @relation("ChatUser1", fields: [user1Id], references: [id])
+  user2   User    @relation("ChatUser2", fields: [user2Id], references: [id])
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([user1Id, user2Id, productId])
+  @@index([user1Id])
+  @@index([user2Id])
+  @@index([updatedAt])
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  chatId    Int
+  senderId  Int
+  content   String
+  createdAt DateTime @default(now())
+
+  chat   Chat @relation("ChatMessages", fields: [chatId], references: [id], onDelete: Cascade)
+  sender User @relation("MessageSender", fields: [senderId], references: [id])
+
+  chatAsLastMessage Chat? @relation("LastMessageRelation")
+
+  @@index([chatId])
+  @@index([createdAt])
+}
+
+//---------------------------------------
+//PAGOS
+//---------------------------------------
+
+model Wallet {
+  id             Int   @id @default(autoincrement())
+  userId         Int   @unique
+  balance        Float @default(0)
+  pendingBalance Float @default(0)
+  user           User  @relation(fields: [userId], references: [id])
+}
+
+//---------------------------------------
+// OFERTAS
+//---------------------------------------
+
+model Operation {
+  id                    Int             @id @default(autoincrement())
+  requesterId           Int
+  receiverId            Int
+  mainProductId         Int
+  type                  OperationType
+  moneyOffered          Float?
+  isDirectPurchase      Boolean         @default(false)
+  status                OperationStatus @default(PENDING)
+  stripePaymentIntentId String?
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  requester   User    @relation("OperationsRequested", fields: [requesterId], references: [id])
+  receiver    User    @relation("OperationsReceived", fields: [receiverId], references: [id])
+  mainProduct Product @relation("ProductOperations", fields: [mainProductId], references: [id], onDelete: Cascade)
+
+  offeredProducts OperationProduct[]
+
+  @@index([requesterId])
+  @@index([receiverId])
+  @@index([mainProductId])
+  @@index([status])
+  @@index([type])
+}
+
+model OperationProduct {
+  id          Int @id @default(autoincrement())
+  operationId Int
+  productId   Int
+
+  operation Operation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([operationId, productId])
+}
+
+enum OperationType {
+  SALE
+  TRADE
+}
+
+enum OperationStatus {
+  PENDING
+  ACCEPTED
+  PAYMENT_PENDING
+  PAID
+  COMPLETED
+  REJECTED
+  CANCELLED
+}
