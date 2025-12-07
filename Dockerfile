@@ -2,13 +2,13 @@ FROM node:20.19
 
 WORKDIR /myapp
 
-# Copiamos primero los package para aprovechar caché
 COPY package*.json ./
 
-# Instalamos dependencias
 RUN npm install --omit=dev
 
-# Copiamos el resto del proyecto
+# Generar prisma client
+RUN npx prisma generate
+
 COPY . .
 
 EXPOSE 3000
