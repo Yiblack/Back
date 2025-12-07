@@ -1,7 +1,16 @@
 FROM node:20.19
 
 WORKDIR /myapp
-COPY package*.json ./
-RUN npm install -g nodemon && npm install
 
-CMD ["nodemon", "src/index.js"]
+# Copiamos primero los package para aprovechar caché
+COPY package*.json ./
+
+# Instalamos dependencias
+RUN npm install --omit=dev
+
+# Copiamos el resto del proyecto
+COPY . .
+
+EXPOSE 3000
+
+CMD ["node", "src/index.js"]
