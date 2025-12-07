@@ -3,13 +3,13 @@ FROM node:20.19
 WORKDIR /myapp
 
 COPY package*.json ./
-
 RUN npm install --omit=dev
 
-# Generar prisma client
-RUN npx prisma generate
-
+# Copiamos el código **ANTES** de generar Prisma
 COPY . .
+
+# Ahora sí existe prisma/schema.prisma
+RUN npx prisma generate
 
 EXPOSE 3000
 
