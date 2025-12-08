@@ -24,11 +24,11 @@ export const updateProduct = async (req, res) => {
     if (!id || isNaN(id)) {
       return res.status(400).json({ error: "ID de producto inválido o faltante" });
     }
-    // console.log(fotos)
+
     const productoExistente = await retryPrisma(() =>
       prisma.product.findUnique({
         where: { id: parseInt(id) },
-        select: { id: true, userId: true, fotos: true },
+        select: { id: true, userId: true, fotos: true, tipoId: true },
       })
     );
 
@@ -44,19 +44,36 @@ export const updateProduct = async (req, res) => {
 
     if (nombre) dataToUpdate.nombre = nombre;
     if (descripcion) dataToUpdate.descripcion = descripcion;
-    if (precio !== undefined) dataToUpdate.precio = precio;
     if (categoriaId) dataToUpdate.categoriaId = categoriaId;
-    if (tipoId) dataToUpdate.tipoId = tipoId;
     if (estadoId) dataToUpdate.estadoId = estadoId;
     if (ubicacion) dataToUpdate.ubicacion = ubicacion;
     if (disponibilidad !== undefined) dataToUpdate.disponibilidad = disponibilidad;
 
+  
+    if (tipoId) {
+      dataToUpdate.tipoId = tipoId;
 
+    
+      const tipoSeleccionado = await prisma.tipo.findUnique({
+        where: { id: tipoId },
+        select: { nombre: true },
+      });
+
+      if (tipoSeleccionado && !["Venta", "Ambos"].includes(tipoSeleccionado.nombre)) {
+ 
+        dataToUpdate.precio = null;
+      } else if (precio !== undefined) {
+        dataToUpdate.precio = precio;
+      }
+    } else if (precio !== undefined) {
+      dataToUpdate.precio = precio;
+    }
+
+   
     if (fotos && Array.isArray(fotos)) {
       const fotosToCreate = fotos.filter(f => !f.id && f.url);
       const fotosToUpdate = fotos.filter(f => f.id && f.url);
-      // console.log(fotosToCreate,"aqui")
-   
+
       if (fotosToCreate.length > 0 || fotosToUpdate.length > 0) {
         dataToUpdate.fotos = {};
 
@@ -72,7 +89,6 @@ export const updateProduct = async (req, res) => {
         }
       }
     }
-
 
     if (Object.keys(dataToUpdate).length === 0) {
       return res.status(400).json({ error: "No se enviaron campos para actualizar" });
@@ -98,6 +114,7 @@ export const updateProduct = async (req, res) => {
     res.status(500).json({ error: "Error actualizando producto" });
   }
 };
+
 
 
 
