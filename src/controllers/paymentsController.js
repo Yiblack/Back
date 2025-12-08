@@ -481,12 +481,7 @@ export const confirmOperationPayment = async (req, res) => {
 
 
 
-    await retryPrisma(() =>
-      prisma.wallet.update({
-        where: { userId: operation.requesterId },
-        data: { balance: { decrement: operation.mainProduct.precio || 0 } },
-      })
-    );
+ 
 
     await retryPrisma(() =>
       prisma.wallet.update({
