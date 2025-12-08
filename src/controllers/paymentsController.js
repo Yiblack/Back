@@ -164,7 +164,10 @@ export const acceptOperation = async (req, res) => {
         data: { visibilidad: false },
       });
     }
-
+    const allProductIds = [
+      operation.mainProductId,
+      ...(operation.offeredProducts?.map(op => op.productId) || []),
+    ];
     await prisma.operation.deleteMany({
       where: {
         id: { not: operationId },
