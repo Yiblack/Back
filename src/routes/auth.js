@@ -71,9 +71,9 @@ router.post("/login", async (req, res) => {
     const user = await retryPrisma(() => prisma.user.findUnique({ where: { email } }));
 
     if (!user) return res.status(400).json({ error: "Usuario no encontrado" });
-    if (user.email !== email) {
-      return res.status(400).json({ error: "Usuario no encontrado" });
-    }
+    // if (user.email !== email) {
+    //   return res.status(400).json({ error: "Usuario no encontrado" });
+    // }
     const valid = await comparePassword(password, user.password);
     if (!valid) return res.status(401).json({ error: "Contraseña incorrecta" });
 
@@ -137,7 +137,7 @@ router.post("/refresh", async (req, res) => {
       return res.status(400).json({ error: "Refresh Token requerido" });
     }
 
-    // console.log(refreshToken)
+    // console.log(refreshToken,"hhoa")
     const token = refreshToken
       .toString()
       .normalize("NFKC")
@@ -183,7 +183,7 @@ router.post("/refresh", async (req, res) => {
       { expiresIn: "30d" }
     );
 
-
+    // console.log(newRefreshToken,"nuevo")
     await prisma.refreshToken.update({
       where: { id: storedToken.id },
       data: {
