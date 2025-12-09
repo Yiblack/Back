@@ -361,6 +361,7 @@ export const createDirectPurchaseOperation = async (req, res) => {
       return res.status(404).json({ error: "Producto no encontrado" });
     }
 
+    console.log(product)
     const operation = await retryPrisma(() =>
       prisma.operation.create({
         data: {
@@ -368,12 +369,21 @@ export const createDirectPurchaseOperation = async (req, res) => {
           receiverId: product.userId,
           mainProductId,
           type: "SALE",
+          moneyOffered: product.precio,
           isDirectPurchase: true,
           status: "PENDING",
         },
       })
     );
 
+    await retryPrisma(() =>
+      prisma.operation.deleteMany({
+        where: {
+          mainProductId: mainProductId,
+          id: { not: operation.id }, 
+        },
+      })
+    );
     res.json({ operationId: operation.id });
   } catch (error) {
     console.error("Error creando operación de compra directa:", error);
@@ -481,7 +491,7 @@ export const confirmOperationPayment = async (req, res) => {
 
 
 
- 
+
 
     await retryPrisma(() =>
       prisma.wallet.update({
