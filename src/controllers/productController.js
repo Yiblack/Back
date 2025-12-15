@@ -48,8 +48,6 @@ export const updateProduct = async (req, res) => {
     if (estadoId) dataToUpdate.estadoId = estadoId;
     if (ubicacion) dataToUpdate.ubicacion = ubicacion;
     if (disponibilidad !== undefined) dataToUpdate.disponibilidad = disponibilidad;
-
-  
     if (tipoId) {
       dataToUpdate.tipoId = tipoId;
 

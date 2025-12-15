@@ -3,8 +3,6 @@ import { retryPrisma } from "../utils/retryPrisma.js";
 
 
 
-
-
 export const deleteChat = async (req, res) => {
   const { chatId } = req.params;
 

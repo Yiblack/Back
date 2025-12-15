@@ -380,7 +380,7 @@ export const createDirectPurchaseOperation = async (req, res) => {
       prisma.operation.deleteMany({
         where: {
           mainProductId: mainProductId,
-          id: { not: operation.id }, 
+          id: { not: operation.id },
         },
       })
     );
@@ -488,10 +488,6 @@ export const confirmOperationPayment = async (req, res) => {
       where: { id: operation.mainProductId },
       data: { visibilidad: false }
     });
-
-
-
-
 
     await retryPrisma(() =>
       prisma.wallet.update({
